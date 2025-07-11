@@ -146,6 +146,18 @@ async function main() {
   await paymaster.deployed();
   console.log(`✅ SimpleVerifyingPaymaster: ${paymaster.address}`);
 
+  // Fund paymaster in EntryPoint
+  const paymasterDepositAmount = ethers.utils.parseEther("0.005");
+  const depositTx = await entryPoint.depositTo(paymaster.address, {
+    value: paymasterDepositAmount,
+  });
+  await depositTx.wait();
+  console.log(
+    `✅ Deposited ${ethers.utils.formatEther(
+      paymasterDepositAmount
+    )} ETH to paymaster in EntryPoint`
+  );
+
   // Check paymaster deposit in EntryPoint
   const paymasterDeposit = await entryPoint.balanceOf(paymaster.address);
   console.log(
@@ -368,11 +380,12 @@ async function main() {
     console.log(`⛽ Gas will be sponsored by paymaster: ${paymaster.address}`);
     console.log(`🔍 UserOp hash: ${userOpHash}`);
 
+    let tx = null;
+    let receipt = null;
     // Submit UserOperation to EntryPoint (deployer acts as bundler)
     console.log(`📤 Submitting UserOperation to EntryPoint...`);
-    let receipt;
     try {
-      const tx = await entryPoint
+      tx = await entryPoint
         .connect(deployer)
         .handleOps([userOp], deployer.address, {
           gasLimit: 2000000, // Much higher gas limit for bundler to handle account creation
@@ -407,7 +420,7 @@ async function main() {
       } else if (error.message.includes("revert")) {
         console.log(`💡 Check contract logic and paymaster validation`);
       }
-      throw error;
+      throw error; // Stop execution if error occurs, do not proceed to use tx
     }
 
     // Find UserOperation event to get actual gas used

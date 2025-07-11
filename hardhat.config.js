@@ -16,7 +16,10 @@ module.exports = {
     },
   },
   networks: {
-    hardhat: {},
+    hardhat: {
+      url: "http://localhost:8888",
+      accounts: DEPLOYER_PRIVATE_KEY ? [DEPLOYER_PRIVATE_KEY] : [],
+    },
     base_sepolia: {
       url: "https://sepolia.base.org",
       accounts: DEPLOYER_PRIVATE_KEY ? [DEPLOYER_PRIVATE_KEY] : [],

@@ -1,0 +1,18 @@
+{
+  "timestamp": "2025-07-11T04:35:05.050Z",
+  "donor": {
+    "eoa": "0xB996aE249f39591b7fB27B5525A37529e70d86B6",
+    "privateKey": "0xd8c59a8c1ff2eacc0b0f481d4c72053394e31f53bd4539a08a94e7e90eeb4c2e",
+    "smartAccount": "0xD4f0235A0cD7609C689d678B71C148133E07EA60"
+  },
+  "fieldOffice": {
+    "eoa": "0xf51e24d56eeba3b3Da710D83a7C43fE5F4B4a420",
+    "privateKey": "0x90c3b99a82a3bb45385110dc72a12a70f7ab9db2c75d795750032d1effe11bce",
+    "smartAccount": "0x173503185fC50f0Ef8602Ecf42c8ad66A8660aB0"
+  },
+  "beneficiary": {
+    "eoa": "0x36250262D1fE43AD0d0dAc35C726D020dE6b0CE1",
+    "privateKey": "0xcab84f6c8a55ff68906b172d8e20007cd24b75ac9bb50c0488956a837434683d",
+    "smartAccount": "0xe3fe57fCDb3eba4f45b0427eFED3908aAa3072a2"
+  }
+}
