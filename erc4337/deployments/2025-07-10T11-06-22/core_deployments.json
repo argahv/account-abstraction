@@ -1,8 +1,0 @@
-{
-  "network": "unknown",
-  "chainId": 84532,
-  "timestamp": "2025-07-10T11:07:04.982Z",
-  "EntryPoint": "0x21a240da319Cfc75A40D52d1576189F36E9D680C",
-  "SimpleAdvancedAccountFactory": "0x48265cf77162136d509820a16400492aF3450091",
-  "SimpleVerifyingPaymaster": "0x454c35943Fcae628A3fb8D18e93632a81810DA92"
-}
