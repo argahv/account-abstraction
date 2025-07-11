@@ -1,0 +1,8 @@
+{
+  "network": "unknown",
+  "chainId": 84532,
+  "timestamp": "2025-07-10T11:02:34.712Z",
+  "RahatToken": "0x9b26FbBE6Ab1BA8f660E3106A037A5c7c26574Be",
+  "CashToken": "0xb66aE76CCE4379b8Dc1db5A6B37c602193067EFd",
+  "CashOutManager": "0xa7E7848518241BDb3343741BB9D8556A235eDe0c"
+}

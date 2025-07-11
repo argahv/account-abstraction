@@ -1,0 +1,514 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
+/**
+ * @title AdvancedAccount
+ * @dev Enhanced SimpleAccount with delegation, session keys, multi-sig, and social recovery
+ */
+contract AdvancedAccount {
+    using ECDSA for bytes32;
+
+    address public owner;
+    address public entryPoint;
+
+    // Delegation system
+    struct Delegation {
+        address delegate;
+        bytes4[] allowedSelectors; // Function selectors delegate can call
+        uint256 expiry;
+        bool active;
+    }
+
+    mapping(address => Delegation) public delegations;
+    mapping(address => bool) public isDelegateActive;
+
+    // Session keys system
+    struct SessionKey {
+        address keyAddress;
+        uint256 expiry;
+        uint256 spendingLimit;
+        uint256 spentAmount;
+        bool active;
+        bytes4[] allowedSelectors;
+    }
+
+    mapping(address => SessionKey) public sessionKeys;
+
+    // Multi-signature system
+    struct MultiSigConfig {
+        address[] signers;
+        uint256 threshold;
+        bool active;
+    }
+
+    MultiSigConfig public multiSigConfig;
+    mapping(bytes32 => uint256) public multiSigApprovals; // userOpHash => approval count
+    mapping(bytes32 => mapping(address => bool)) public hasApproved;
+
+    // Social recovery system
+    struct Guardian {
+        address guardianAddress;
+        bool active;
+    }
+
+    mapping(address => Guardian) public guardians;
+    address[] public guardianList;
+    uint256 public recoveryThreshold;
+
+    struct RecoveryRequest {
+        address newOwner;
+        uint256 timestamp;
+        uint256 approvals;
+        bool executed;
+        mapping(address => bool) hasApproved;
+    }
+
+    mapping(bytes32 => RecoveryRequest) public recoveryRequests;
+    uint256 public constant RECOVERY_DELAY = 2 days;
+
+    // Spending limits
+    mapping(address => uint256) public dailySpendingLimits; // token => limit
+    mapping(address => mapping(uint256 => uint256)) public dailySpent; // token => day => amount
+
+    // Events
+    event DelegationGranted(
+        address indexed delegate,
+        bytes4[] selectors,
+        uint256 expiry
+    );
+    event DelegationRevoked(address indexed delegate);
+    event SessionKeyAdded(
+        address indexed sessionKey,
+        uint256 expiry,
+        uint256 spendingLimit
+    );
+    event SessionKeyRevoked(address indexed sessionKey);
+    event MultiSigConfigured(address[] signers, uint256 threshold);
+    event GuardianAdded(address indexed guardian);
+    event GuardianRemoved(address indexed guardian);
+    event RecoveryInitiated(bytes32 indexed requestId, address newOwner);
+    event RecoveryExecuted(bytes32 indexed requestId, address newOwner);
+    event SpendingLimitSet(address indexed token, uint256 limit);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not owner");
+        _;
+    }
+
+    modifier onlyOwnerOrEntryPoint() {
+        require(
+            msg.sender == owner || msg.sender == entryPoint,
+            "Not authorized"
+        );
+        _;
+    }
+
+    modifier onlyOwnerOrDelegate() {
+        require(
+            msg.sender == owner || isDelegateActive[msg.sender],
+            "Not owner or active delegate"
+        );
+        _;
+    }
+
+    constructor(address _entryPoint) {
+        entryPoint = _entryPoint;
+    }
+
+    function initialize(address _owner) external {
+        require(owner == address(0), "Already initialized");
+        owner = _owner;
+    }
+
+    // ===== DELEGATION SYSTEM =====
+
+    /**
+     * @dev Grant delegation to another address
+     * @param delegate Address to delegate to
+     * @param allowedSelectors Function selectors the delegate can call
+     * @param expiry Expiration timestamp
+     */
+    function grantDelegation(
+        address delegate,
+        bytes4[] calldata allowedSelectors,
+        uint256 expiry
+    ) external onlyOwner {
+        require(delegate != address(0), "Invalid delegate");
+        require(expiry > block.timestamp, "Invalid expiry");
+
+        delegations[delegate] = Delegation({
+            delegate: delegate,
+            allowedSelectors: allowedSelectors,
+            expiry: expiry,
+            active: true
+        });
+
+        isDelegateActive[delegate] = true;
+
+        emit DelegationGranted(delegate, allowedSelectors, expiry);
+    }
+
+    /**
+     * @dev Revoke delegation
+     */
+    function revokeDelegation(address delegate) external onlyOwner {
+        delegations[delegate].active = false;
+        isDelegateActive[delegate] = false;
+
+        emit DelegationRevoked(delegate);
+    }
+
+    /**
+     * @dev Check if delegate can call a specific function
+     */
+    function canDelegateCall(
+        address delegate,
+        bytes4 selector
+    ) public view returns (bool) {
+        Delegation memory delegation = delegations[delegate];
+
+        if (!delegation.active || delegation.expiry <= block.timestamp) {
+            return false;
+        }
+
+        for (uint i = 0; i < delegation.allowedSelectors.length; i++) {
+            if (delegation.allowedSelectors[i] == selector) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // ===== SESSION KEYS SYSTEM =====
+
+    /**
+     * @dev Add a session key with spending limits
+     */
+    function addSessionKey(
+        address keyAddress,
+        uint256 expiry,
+        uint256 spendingLimit,
+        bytes4[] calldata allowedSelectors
+    ) external onlyOwner {
+        require(keyAddress != address(0), "Invalid key address");
+        require(expiry > block.timestamp, "Invalid expiry");
+
+        sessionKeys[keyAddress] = SessionKey({
+            keyAddress: keyAddress,
+            expiry: expiry,
+            spendingLimit: spendingLimit,
+            spentAmount: 0,
+            active: true,
+            allowedSelectors: allowedSelectors
+        });
+
+        emit SessionKeyAdded(keyAddress, expiry, spendingLimit);
+    }
+
+    /**
+     * @dev Revoke a session key
+     */
+    function revokeSessionKey(address keyAddress) external onlyOwner {
+        sessionKeys[keyAddress].active = false;
+
+        emit SessionKeyRevoked(keyAddress);
+    }
+
+    /**
+     * @dev Check if session key can perform operation
+     */
+    function canSessionKeyCall(
+        address keyAddress,
+        bytes4 selector,
+        uint256 value
+    ) public view returns (bool) {
+        SessionKey memory sessionKey = sessionKeys[keyAddress];
+
+        if (!sessionKey.active || sessionKey.expiry <= block.timestamp) {
+            return false;
+        }
+
+        if (sessionKey.spentAmount + value > sessionKey.spendingLimit) {
+            return false;
+        }
+
+        for (uint i = 0; i < sessionKey.allowedSelectors.length; i++) {
+            if (sessionKey.allowedSelectors[i] == selector) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // ===== MULTI-SIGNATURE SYSTEM =====
+
+    /**
+     * @dev Configure multi-signature requirements
+     */
+    function configureMultiSig(
+        address[] calldata signers,
+        uint256 threshold
+    ) external onlyOwner {
+        require(
+            threshold > 0 && threshold <= signers.length,
+            "Invalid threshold"
+        );
+
+        multiSigConfig.signers = signers;
+        multiSigConfig.threshold = threshold;
+        multiSigConfig.active = true;
+
+        emit MultiSigConfigured(signers, threshold);
+    }
+
+    /**
+     * @dev Approve a UserOperation (for multi-sig)
+     */
+    function approveUserOp(bytes32 userOpHash) external {
+        require(multiSigConfig.active, "Multi-sig not active");
+        require(isValidSigner(msg.sender), "Not a valid signer");
+        require(!hasApproved[userOpHash][msg.sender], "Already approved");
+
+        hasApproved[userOpHash][msg.sender] = true;
+        multiSigApprovals[userOpHash]++;
+    }
+
+    /**
+     * @dev Check if address is a valid multi-sig signer
+     */
+    function isValidSigner(address signer) public view returns (bool) {
+        for (uint i = 0; i < multiSigConfig.signers.length; i++) {
+            if (multiSigConfig.signers[i] == signer) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // ===== SOCIAL RECOVERY SYSTEM =====
+
+    /**
+     * @dev Add a guardian for social recovery
+     */
+    function addGuardian(address guardian) external onlyOwner {
+        require(guardian != address(0), "Invalid guardian");
+        require(!guardians[guardian].active, "Guardian already exists");
+
+        guardians[guardian] = Guardian({
+            guardianAddress: guardian,
+            active: true
+        });
+
+        guardianList.push(guardian);
+
+        emit GuardianAdded(guardian);
+    }
+
+    /**
+     * @dev Remove a guardian
+     */
+    function removeGuardian(address guardian) external onlyOwner {
+        require(guardians[guardian].active, "Guardian not active");
+
+        guardians[guardian].active = false;
+
+        // Remove from guardianList
+        for (uint i = 0; i < guardianList.length; i++) {
+            if (guardianList[i] == guardian) {
+                guardianList[i] = guardianList[guardianList.length - 1];
+                guardianList.pop();
+                break;
+            }
+        }
+
+        emit GuardianRemoved(guardian);
+    }
+
+    /**
+     * @dev Set recovery threshold
+     */
+    function setRecoveryThreshold(uint256 threshold) external onlyOwner {
+        require(threshold > 0, "Invalid threshold");
+        recoveryThreshold = threshold;
+    }
+
+    /**
+     * @dev Initiate account recovery
+     */
+    function initiateRecovery(address newOwner) external {
+        require(guardians[msg.sender].active, "Not an active guardian");
+        require(newOwner != address(0), "Invalid new owner");
+
+        bytes32 requestId = keccak256(
+            abi.encodePacked(newOwner, block.timestamp)
+        );
+
+        RecoveryRequest storage request = recoveryRequests[requestId];
+        request.newOwner = newOwner;
+        request.timestamp = block.timestamp;
+        request.approvals = 1;
+        request.hasApproved[msg.sender] = true;
+
+        emit RecoveryInitiated(requestId, newOwner);
+    }
+
+    /**
+     * @dev Approve a recovery request
+     */
+    function approveRecovery(bytes32 requestId) external {
+        require(guardians[msg.sender].active, "Not an active guardian");
+
+        RecoveryRequest storage request = recoveryRequests[requestId];
+        require(request.newOwner != address(0), "Recovery request not found");
+        require(!request.hasApproved[msg.sender], "Already approved");
+        require(!request.executed, "Already executed");
+
+        request.hasApproved[msg.sender] = true;
+        request.approvals++;
+    }
+
+    /**
+     * @dev Execute recovery after threshold and delay
+     */
+    function executeRecovery(bytes32 requestId) external {
+        RecoveryRequest storage request = recoveryRequests[requestId];
+        require(request.newOwner != address(0), "Recovery request not found");
+        require(!request.executed, "Already executed");
+        require(
+            request.approvals >= recoveryThreshold,
+            "Insufficient approvals"
+        );
+        require(
+            block.timestamp >= request.timestamp + RECOVERY_DELAY,
+            "Recovery delay not met"
+        );
+
+        request.executed = true;
+        owner = request.newOwner;
+
+        emit RecoveryExecuted(requestId, request.newOwner);
+    }
+
+    // ===== SPENDING LIMITS =====
+
+    /**
+     * @dev Set daily spending limit for a token
+     */
+    function setDailySpendingLimit(
+        address token,
+        uint256 limit
+    ) external onlyOwner {
+        dailySpendingLimits[token] = limit;
+        emit SpendingLimitSet(token, limit);
+    }
+
+    /**
+     * @dev Check and update daily spending
+     */
+    function checkDailySpending(address token, uint256 amount) internal {
+        uint256 today = block.timestamp / 1 days;
+        uint256 limit = dailySpendingLimits[token];
+
+        if (limit > 0) {
+            require(
+                dailySpent[token][today] + amount <= limit,
+                "Daily spending limit exceeded"
+            );
+            dailySpent[token][today] += amount;
+        }
+    }
+
+    // ===== ENHANCED EXECUTION =====
+
+    /**
+     * @dev Enhanced execute function with delegation and session key support
+     */
+    function execute(
+        address dest,
+        uint256 value,
+        bytes calldata func
+    ) external {
+        bytes4 selector = bytes4(func[:4]);
+
+        // Check authorization
+        if (msg.sender == owner || msg.sender == entryPoint) {
+            // Owner or EntryPoint can execute anything
+        } else if (
+            isDelegateActive[msg.sender] &&
+            canDelegateCall(msg.sender, selector)
+        ) {
+            // Delegate can execute allowed functions
+        } else if (
+            sessionKeys[msg.sender].active &&
+            canSessionKeyCall(msg.sender, selector, value)
+        ) {
+            // Session key can execute with limits
+            sessionKeys[msg.sender].spentAmount += value;
+        } else {
+            revert("Not authorized to execute");
+        }
+
+        // Check spending limits for token transfers
+        if (selector == bytes4(keccak256("transfer(address,uint256)"))) {
+            checkDailySpending(dest, value);
+        }
+
+        (bool success, bytes memory result) = dest.call{value: value}(func);
+        if (!success) {
+            assembly {
+                revert(add(result, 32), mload(result))
+            }
+        }
+    }
+
+    /**
+     * @dev Enhanced UserOperation validation with multi-sig support
+     */
+    function validateUserOp(
+        bytes32 userOpHash,
+        uint256 missingAccountFunds
+    ) external view returns (uint256 validationData) {
+        // If multi-sig is active, check approvals
+        if (multiSigConfig.active) {
+            if (multiSigApprovals[userOpHash] >= multiSigConfig.threshold) {
+                return 0; // Valid
+            } else {
+                return 1; // Invalid - insufficient approvals
+            }
+        }
+
+        // For single owner, simplified validation
+        return 0;
+    }
+
+    /**
+     * @dev Batch execute multiple operations
+     */
+    function batchExecute(
+        address[] calldata dests,
+        uint256[] calldata values,
+        bytes[] calldata funcs
+    ) external onlyOwnerOrEntryPoint {
+        require(
+            dests.length == values.length && values.length == funcs.length,
+            "Array length mismatch"
+        );
+
+        for (uint i = 0; i < dests.length; i++) {
+            (bool success, bytes memory result) = dests[i].call{
+                value: values[i]
+            }(funcs[i]);
+            if (!success) {
+                assembly {
+                    revert(add(result, 32), mload(result))
+                }
+            }
+        }
+    }
+
+    receive() external payable {}
+}

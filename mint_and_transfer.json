@@ -1,0 +1,8 @@
+{
+  "donor": "0x0660361D2350fBAA95C0B946A7D278b3E30caA32",
+  "fieldOffice": "0x3fa0279cF03c5A8f4374d623DC21Ae7Ceee5eb13",
+  "mintAmount": "1000000000000000000000",
+  "transferAmount": "500000000000000000000",
+  "mintTxHash": "0x1b878e0ba474c90f7e82c40ad1b8ac075544f1a29f8e5dd94ba1ba4f8dfc1a18",
+  "transferTxHash": "0x3c84ead921b3f3a30303857cd8e73d7a41fa78412e1bd7b9d7397bc1d664bb6f"
+}

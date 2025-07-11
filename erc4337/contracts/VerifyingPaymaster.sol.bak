@@ -1,0 +1,164 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "./core/BasePaymaster.sol";
+import "./core/UserOperation.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
+/**
+ * @title VerifyingPaymaster
+ * @dev A paymaster that verifies a signature from the paymaster owner before sponsoring gas
+ * This allows controlled gas sponsorship for humanitarian aid operations
+ */
+contract VerifyingPaymaster is BasePaymaster {
+    using ECDSA for bytes32;
+    using UserOperationLib for UserOperation;
+
+    address public verifyingSigner;
+    mapping(address => uint256) public senderNonce;
+
+    event VerifyingSignerChanged(
+        address indexed previousSigner,
+        address indexed newSigner,
+        address indexed changedBy
+    );
+
+    constructor(
+        IEntryPoint _entryPoint,
+        address _verifyingSigner
+    ) BasePaymaster(_entryPoint) {
+        _transferOwnership(msg.sender);
+        verifyingSigner = _verifyingSigner;
+    }
+
+    /**
+     * @dev Set a new verifying signer
+     * @param _newSigner The new signer address
+     */
+    function setVerifyingSigner(address _newSigner) external onlyOwner {
+        address oldSigner = verifyingSigner;
+        verifyingSigner = _newSigner;
+        emit VerifyingSignerChanged(oldSigner, _newSigner, msg.sender);
+    }
+
+    /**
+     * @dev Return the hash we're going to sign off-chain
+     * @param userOp The UserOperation
+     */
+    function getHash(
+        UserOperation calldata userOp,
+        uint48 validUntil,
+        uint48 validAfter
+    ) public view returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(
+                    userOp.getSender(),
+                    userOp.nonce,
+                    keccak256(userOp.initCode),
+                    keccak256(userOp.callData),
+                    userOp.callGasLimit,
+                    userOp.verificationGasLimit,
+                    userOp.preVerificationGas,
+                    userOp.maxFeePerGas,
+                    userOp.maxPriorityFeePerGas,
+                    block.chainid,
+                    address(this),
+                    validUntil,
+                    validAfter
+                )
+            );
+    }
+
+    /**
+     * @dev Verify the paymaster signature
+     * paymasterAndData holds the paymaster address followed by the signature
+     * Signature format: abi.encode(validUntil, validAfter, signature)
+     */
+    function _validatePaymasterUserOp(
+        UserOperation calldata userOp,
+        bytes32 /*userOpHash*/,
+        uint256 requiredPreFund
+    ) internal override returns (bytes memory context, uint256 validationData) {
+        (requiredPreFund);
+
+        // Extract signature data from paymasterAndData
+        // paymasterAndData = paymaster address (20 bytes) + signature data
+        require(
+            userOp.paymasterAndData.length >= 20 + 65,
+            "VerifyingPaymaster: invalid paymasterAndData length"
+        );
+
+        // Extract validUntil, validAfter, and signature from paymasterAndData
+        bytes calldata signatureData = userOp.paymasterAndData[20:];
+
+        uint48 validUntil = uint48(bytes6(signatureData[0:6]));
+        uint48 validAfter = uint48(bytes6(signatureData[6:12]));
+        bytes calldata signature = signatureData[12:];
+
+        // Verify time validity
+        require(
+            validAfter <= block.timestamp,
+            "VerifyingPaymaster: signature not yet valid"
+        );
+        require(
+            validUntil == 0 || block.timestamp <= validUntil,
+            "VerifyingPaymaster: signature expired"
+        );
+
+        // Create hash to verify
+        bytes32 hash = getHash(userOp, validUntil, validAfter)
+            .toEthSignedMessageHash();
+
+        // Verify signature
+        address recovered = hash.recover(signature);
+        require(
+            recovered == verifyingSigner,
+            "VerifyingPaymaster: invalid signature"
+        );
+
+        // Pack validation data: validAfter and validUntil
+        validationData = _packValidationData(false, validUntil, validAfter);
+
+        // Return empty context
+        context = "";
+    }
+
+    /**
+     * @dev Pack validation data
+     */
+    function _packValidationData(
+        bool sigFailed,
+        uint48 validUntil,
+        uint48 validAfter
+    ) internal pure returns (uint256) {
+        return
+            (uint256(validUntil) << 160) |
+            (uint256(validAfter) << (160 + 48)) |
+            (sigFailed ? 1 : 0);
+    }
+
+    /**
+     * @dev Allow owner to deposit ETH for sponsoring gas
+     */
+    function deposit() external payable override onlyOwner {
+        entryPoint.depositTo{value: msg.value}(address(this));
+    }
+
+    /**
+     * @dev Allow owner to withdraw ETH
+     */
+    function withdrawTo(
+        address payable withdrawAddress,
+        uint256 amount
+    ) external override onlyOwner {
+        entryPoint.withdrawTo(withdrawAddress, amount);
+    }
+
+    /**
+     * @dev Get the paymaster's balance on the EntryPoint
+     */
+    function getBalance() external view returns (uint256) {
+        return entryPoint.balanceOf(address(this));
+    }
+}

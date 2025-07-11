@@ -1,0 +1,80 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "./AdvancedAccount.sol";
+
+/**
+ * @title AdvancedAccountFactory
+ * @dev Factory for creating AdvancedAccount instances with CREATE2
+ */
+contract AdvancedAccountFactory {
+    address public immutable entryPoint;
+
+    event AdvancedAccountCreated(
+        address indexed account,
+        address indexed owner,
+        uint256 salt
+    );
+
+    constructor(address _entryPoint) {
+        entryPoint = _entryPoint;
+    }
+
+    /**
+     * @dev Create a new AdvancedAccount
+     * @param owner The owner of the account
+     * @param salt Salt for CREATE2 deterministic deployment
+     * @return account The deployed AdvancedAccount instance
+     */
+    function createAccount(
+        address owner,
+        uint256 salt
+    ) external returns (AdvancedAccount account) {
+        address addr = getAddress(owner, salt);
+
+        uint256 codeSize = addr.code.length;
+        if (codeSize > 0) {
+            return AdvancedAccount(payable(addr));
+        }
+
+        account = new AdvancedAccount{salt: bytes32(salt)}(entryPoint);
+        account.initialize(owner);
+
+        emit AdvancedAccountCreated(address(account), owner, salt);
+
+        return account;
+    }
+
+    /**
+     * @dev Calculate the counterfactual address of an account
+     * @param owner The owner of the account
+     * @param salt Salt for CREATE2 deterministic deployment
+     * @return The calculated address
+     */
+    function getAddress(
+        address owner,
+        uint256 salt
+    ) public view returns (address) {
+        bytes memory bytecode = abi.encodePacked(
+            type(AdvancedAccount).creationCode,
+            abi.encode(entryPoint)
+        );
+        bytes32 bytecodeHash = keccak256(bytecode);
+
+        return
+            address(
+                uint160(
+                    uint256(
+                        keccak256(
+                            abi.encodePacked(
+                                bytes1(0xff),
+                                address(this),
+                                bytes32(salt),
+                                bytecodeHash
+                            )
+                        )
+                    )
+                )
+            );
+    }
+}
