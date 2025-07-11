@@ -15,6 +15,11 @@ contract SimpleAdvancedAccount is IAccount {
     address public entryPoint;
     uint256 public constant SIG_VALIDATION_FAILED = 1;
 
+    // Delegation support
+    mapping(address => bool) public delegates;
+    event DelegateAdded(address indexed delegate);
+    event DelegateRemoved(address indexed delegate);
+
     event AccountInitialized(address indexed entryPoint, address indexed owner);
 
     modifier onlyOwner() {
@@ -71,11 +76,10 @@ contract SimpleAdvancedAccount is IAccount {
             require(success, "Account: failed to prefund EntryPoint");
         }
 
-        // Validate signature
+        // Validate signature: allow owner or delegate
         bytes32 hash = userOpHash.toEthSignedMessageHash();
         address recovered = hash.recover(userOp.signature);
-
-        if (recovered == owner) {
+        if (recovered == owner || delegates[recovered]) {
             return 0; // Valid signature
         }
         return SIG_VALIDATION_FAILED; // Invalid signature
@@ -127,6 +131,22 @@ contract SimpleAdvancedAccount is IAccount {
         // For demo purposes, we'll allow any address that's not the zero address
         // In production, you'd want to maintain a whitelist of authorized paymasters
         return caller != address(0);
+    }
+
+    /**
+     * @dev Add delegate to the account
+     */
+    function addDelegate(address delegate) external onlyOwner {
+        delegates[delegate] = true;
+        emit DelegateAdded(delegate);
+    }
+
+    /**
+     * @dev Remove delegate from the account
+     */
+    function removeDelegate(address delegate) external onlyOwner {
+        delegates[delegate] = false;
+        emit DelegateRemoved(delegate);
     }
 
     /**

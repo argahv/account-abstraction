@@ -650,8 +650,8 @@
       ]
     },
     "/Users/argahv/Projects/rumsan/account-abstraction/erc4337/contracts/SimpleAdvancedAccount.sol": {
-      "lastModificationDate": 1752142672197,
-      "contentHash": "264c2703118f6189b75814ba1c745545",
+      "lastModificationDate": 1752210266564,
+      "contentHash": "248c67cd9b981dfb9b3acdf9692c3715",
       "sourceName": "contracts/SimpleAdvancedAccount.sol",
       "solcConfig": {
         "version": "0.8.20",
@@ -910,6 +910,45 @@
       ],
       "artifacts": [
         "Create2"
+      ]
+    },
+    "/Users/argahv/Projects/rumsan/account-abstraction/erc4337/contracts/AidFlowManager.sol": {
+      "lastModificationDate": 1752210837995,
+      "contentHash": "29696fb1c540ef6ab404bfbe2f91a195",
+      "sourceName": "contracts/AidFlowManager.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./RahatToken.sol",
+        "./CashToken.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "AidFlowManager"
       ]
     }
   }

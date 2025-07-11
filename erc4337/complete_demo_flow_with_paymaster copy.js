@@ -5,8 +5,16 @@ require("dotenv").config();
 
 async function main() {
   // Create timestamp for this run
+  const network = await ethers.provider.getNetwork();
+  console.log(`📡 Network: ${network.name} (Chain ID: ${network.chainId})`);
+
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
-  const deploymentDir = path.join(__dirname, "deployments", timestamp);
+  const deploymentDir = path.join(
+    __dirname,
+    "deployments",
+    timestamp,
+    network.chainId
+  );
 
   // Create deployment directory
   if (!fs.existsSync(path.join(__dirname, "deployments"))) {
@@ -16,11 +24,9 @@ async function main() {
 
   console.log("🚀 Complete ERC-4337 Demo Flow with Paymaster");
   console.log("==============================================");
-  console.log(`📁 Deployment folder: deployments/${timestamp}`);
-  console.log();
-
-  // Get network info
-  const network = await ethers.provider.getNetwork();
+  console.log(
+    `📁 Deployment folder: deployments/${timestamp}_${network.chainId}`
+  );
   console.log(`📡 Network: ${network.name} (Chain ID: ${network.chainId})`);
 
   // Dynamic gas settings based on network
@@ -38,12 +44,13 @@ async function main() {
       paymasterFunding: "1.0",
     },
     testnet: {
-      maxFeePerGas: ethers.utils.parseUnits("2", "gwei"), // Lower for testnet
-      maxPriorityFeePerGas: ethers.utils.parseUnits("1", "gwei"),
-      callGasLimit: 1000000, // Higher for real network
-      verificationGasLimit: 800000,
-      preVerificationGas: 150000,
-      paymasterFunding: "0.005", // Less funding needed on testnet
+      // Optimized for low-cost Base Sepolia
+      maxFeePerGas: ethers.utils.parseUnits("0.3", "gwei"),
+      maxPriorityFeePerGas: ethers.utils.parseUnits("0.1", "gwei"),
+      callGasLimit: 700000,
+      verificationGasLimit: 400000,
+      preVerificationGas: 80000,
+      paymasterFunding: "0.05", // Sufficient for several ops on testnet
     },
     mainnet: {
       maxFeePerGas: ethers.utils.parseUnits("10", "gwei"),
@@ -133,14 +140,28 @@ async function main() {
   await factory.deployed();
   console.log(`✅ SimpleAdvancedAccountFactory: ${factory.address}`);
 
-  // Use existing paymaster address
-  const paymasterAddress = "0x454c35943Fcae628A3fb8D18e93632a81810DA92";
+  // Deploy SimpleVerifyingPaymaster
+  console.log("🔄 Deploying SimpleVerifyingPaymaster...");
   const VerifyingPaymaster = await ethers.getContractFactory(
     "SimpleVerifyingPaymaster"
   );
-  const paymaster = VerifyingPaymaster.attach(paymasterAddress);
+  const paymaster = await VerifyingPaymaster.deploy(
+    entryPoint.address,
+    deployer.address
+  );
+  await paymaster.deployed();
+  console.log(`✅ SimpleVerifyingPaymaster: ${paymaster.address}`);
+
+  // Fund paymaster in EntryPoint
+  const paymasterDepositAmount = ethers.utils.parseEther("0.005");
+  const depositTx = await entryPoint.depositTo(paymaster.address, {
+    value: paymasterDepositAmount,
+  });
+  await depositTx.wait();
   console.log(
-    `✅ Using existing SimpleVerifyingPaymaster: ${paymaster.address}`
+    `✅ Deposited ${ethers.utils.formatEther(
+      paymasterDepositAmount
+    )} ETH to paymaster in EntryPoint`
   );
 
   // Check paymaster deposit in EntryPoint
@@ -169,6 +190,16 @@ async function main() {
   const cashToken = await CashToken.deploy();
   await cashToken.deployed();
   console.log(`✅ CashToken: ${cashToken.address}`);
+
+  // Deploy AidFlowManager
+  console.log("🔄 Deploying AidFlowManager...");
+  const AidFlowManager = await ethers.getContractFactory("AidFlowManager");
+  const aidFlowManager = await AidFlowManager.deploy(
+    rahatToken.address,
+    cashToken.address
+  );
+  await aidFlowManager.deployed();
+  console.log(`✅ AidFlowManager: ${aidFlowManager.address}`);
 
   // Deploy CashOutManager
   console.log("🔄 Deploying CashOutManager...");
@@ -278,6 +309,53 @@ async function main() {
   console.log(`🏢 Field Office Smart Account: ${fieldOfficeAccountAddress}`);
   console.log(`👤 Beneficiary Smart Account: ${beneficiaryAccountAddress}`);
 
+  // Deploy field office and beneficiary smart accounts if not already deployed, then add deployer as delegate
+  async function ensureAccountDeployedAndDelegate(accountAddress, ownerWallet) {
+    const code = await ethers.provider.getCode(accountAddress);
+    if (code === "0x") {
+      // Deploy via factory
+      const salt = accountAddress === fieldOfficeAccountAddress ? 1 : 2;
+      const tx = await factory.createAccount(ownerWallet.address, salt);
+      await tx.wait();
+      console.log(`✅ Deployed smart account at: ${accountAddress}`);
+    }
+    // Add deployer as delegate
+    const SimpleAdvancedAccount = await ethers.getContractFactory(
+      "SimpleAdvancedAccount"
+    );
+    const account = SimpleAdvancedAccount.attach(accountAddress);
+    const tx2 = await account
+      .connect(ownerWallet)
+      .addDelegate(deployer.address);
+    await tx2.wait();
+    console.log(`✅ Deployer added as delegate for: ${accountAddress}`);
+  }
+
+  await ensureAccountDeployedAndDelegate(
+    fieldOfficeAccountAddress,
+    fieldOfficeWallet
+  );
+  await ensureAccountDeployedAndDelegate(
+    beneficiaryAccountAddress,
+    beneficiaryWallet
+  );
+
+  // After deploying field office and beneficiary smart accounts, add AidFlowManager as delegate
+  async function addManagerAsDelegate(accountAddress, ownerWallet) {
+    const SimpleAdvancedAccount = await ethers.getContractFactory(
+      "SimpleAdvancedAccount"
+    );
+    const account = SimpleAdvancedAccount.attach(accountAddress);
+    const tx = await account
+      .connect(ownerWallet)
+      .addDelegate(aidFlowManager.address);
+    await tx.wait();
+    console.log(`✅ AidFlowManager added as delegate for: ${accountAddress}`);
+  }
+
+  await addManagerAsDelegate(fieldOfficeAccountAddress, fieldOfficeWallet);
+  await addManagerAsDelegate(beneficiaryAccountAddress, beneficiaryWallet);
+
   // Sponsor smart accounts with paymaster
   console.log("🔐 Sponsoring smart accounts with paymaster...");
   await paymaster.connect(deployer).sponsorAccount(donorAccountAddress);
@@ -355,21 +433,31 @@ async function main() {
     // Get UserOp hash from EntryPoint (this includes EntryPoint address and chainId)
     const userOpHash = await entryPoint.getUserOpHash(userOp);
 
+    // For field office and beneficiary, let deployer sign as delegate
+    let signer = wallet;
+    if (
+      smartAccountAddress === fieldOfficeAccountAddress ||
+      smartAccountAddress === beneficiaryAccountAddress
+    ) {
+      signer = deployer;
+    }
+
     // Sign the UserOperation hash
-    const signature = await wallet.signMessage(
+    const signature = await signer.signMessage(
       ethers.utils.arrayify(userOpHash)
     );
     userOp.signature = signature;
 
-    console.log(`🔐 UserOperation signed by ${wallet.address}`);
+    console.log(`🔐 UserOperation signed by ${signer.address}`);
     console.log(`⛽ Gas will be sponsored by paymaster: ${paymaster.address}`);
     console.log(`🔍 UserOp hash: ${userOpHash}`);
 
+    let tx = null;
+    let receipt = null;
     // Submit UserOperation to EntryPoint (deployer acts as bundler)
     console.log(`📤 Submitting UserOperation to EntryPoint...`);
-    let receipt;
     try {
-      const tx = await entryPoint
+      tx = await entryPoint
         .connect(deployer)
         .handleOps([userOp], deployer.address, {
           gasLimit: 2000000, // Much higher gas limit for bundler to handle account creation
@@ -404,7 +492,7 @@ async function main() {
       } else if (error.message.includes("revert")) {
         console.log(`💡 Check contract logic and paymaster validation`);
       }
-      throw error;
+      throw error; // Stop execution if error occurs, do not proceed to use tx
     }
 
     // Find UserOperation event to get actual gas used
