@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "description": "Complete humanitarian aid flow execution timeline with gas sponsorship details",
+    "timestamp": "2025-07-11T05:54:35.009Z",
+    "version": "1.0.0",
+    "generatedBy": "ERC-4337 Demo Script"
+  },
+  "flowSteps": [
+    {
+      "step": "3.1",
+      "action": "Mint tokens to donor",
+      "amount": "10000.0",
+      "token": "RAHAT",
+      "from": "Deployer",
+      "to": "Donor Smart Account",
+      "txHash": "0x67a6dff7e4831f7f7e814e31089fb81f7bb847a901f97517e8a596febdd13e65",
+      "timestamp": "2025-07-11T05:53:45.964Z",
+      "gasSponsored": false,
+      "description": "Initial token distribution by humanitarian organization"
+    },
+    {
+      "step": "3.2",
+      "action": "Donor transfers to field office",
+      "amount": "5000.0",
+      "token": "RAHAT",
+      "from": "Donor Smart Account",
+      "to": "Field Office Smart Account",
+      "txHash": "0xc35c4356aa5d639513b82aa99259891469f2646b0328b33566acd4303b2e49e8",
+      "gasUsed": "2016247",
+      "gasCost": "0.000201624825007314",
+      "paymasterUsed": "0.000201624825007314",
+      "userOpSender": "0xFAE7eE8e803495ca1349b01f10cbc67B26413303",
+      "timestamp": "2025-07-11T05:53:52.973Z",
+      "gasSponsored": true,
+      "method": "ERC-4337 UserOperation",
+      "description": "Donor distributes funds to field operations"
+    },
+    {
+      "step": "3.3",
+      "action": "Field office assigns to beneficiary via AidFlowManager",
+      "amount": "2000.0",
+      "token": "RAHAT",
+      "from": "Field Office Smart Account",
+      "to": "Beneficiary Smart Account",
+      "txHash": "0xa39c7834e112180a73b3308e7d129ef3007b2340c04e14eaa75a1d3a510a2576",
+      "gasUsed": "192696",
+      "gasCost": "0.000019269612139848",
+      "paymasterUsed": "0.000019269612139848",
+      "userOpSender": "0xf2eCCAc18f7058b73B6f9F311F27267a06bd843F",
+      "timestamp": "2025-07-11T05:54:16.876Z",
+      "gasSponsored": true,
+      "method": "ERC-4337 UserOperation via AidFlowManager",
+      "description": "Field office distributes aid to verified beneficiary using on-chain business logic"
+    },
+    {
+      "step": "3.4",
+      "action": "Beneficiary cashes out via AidFlowManager",
+      "amount": "1000.0",
+      "tokenIn": "RAHAT",
+      "tokenOut": "CASH",
+      "account": "Beneficiary Smart Account",
+      "txHash": "0x700e828f781c30e63f356281d968b8cd71b9a7ae721eb7926f207a0b6b1e193a",
+      "gasUsed": "244671",
+      "gasCost": "0.000024467115169602",
+      "paymasterUsed": "0.000024467115169602",
+      "userOpSender": "0x4d0eB5498578a487754D8FF87531BB8adCbCb6Cf",
+      "timestamp": "2025-07-11T05:54:35.009Z",
+      "gasSponsored": true,
+      "method": "ERC-4337 UserOperation via AidFlowManager",
+      "description": "Beneficiary converts aid tokens to spendable cash equivalent using on-chain business logic"
+    }
+  ],
+  "summary": {
+    "totalSteps": 4,
+    "sponsoredOperations": 3,
+    "totalGasSponsored": "0.000245"
+  }
+}

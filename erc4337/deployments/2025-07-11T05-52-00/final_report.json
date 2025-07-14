@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "description": "Comprehensive final report of ERC-4337 humanitarian aid demonstration with all technical details and achievements",
+    "timestamp": "2025-07-11T05:54:39.246Z",
+    "version": "1.0.0",
+    "generatedBy": "ERC-4337 Demo Script"
+  },
+  "executionSummary": {
+    "success": true,
+    "completedAt": "2025-07-11T05:54:39.246Z",
+    "deploymentDirectory": "/Users/argahv/Projects/rumsan/account-abstraction/erc4337/deployments/2025-07-11T05-52-00",
+    "network": {
+      "name": "unknown",
+      "chainId": 84532,
+      "type": "testnet"
+    }
+  },
+  "contractAddresses": {
+    "entryPoint": "0x7432465fD84Ed0CFB766496f4B3e37cd3a368a36",
+    "factory": "0x42ad29ce703EdaDF2a4713Cc6eeA10d7694dC2F8",
+    "paymaster": "0xb5a8E96fec097A53D96A7184a8c4Fc800Ba56066",
+    "rahatToken": "0x8a8048175f4461eC50d833BB92583c2e9a68BE91",
+    "cashToken": "0x7f8c2438F1fF5A0B42018733EE0Dd0Cd42d5f329",
+    "aidFlowManager": "0x25836A763F8Ce5F93E1a7dED2F756061e2414257",
+    "cashOutManager": "0xB16AF631b383f4453471b40cD1BDD230CAa261Fa"
+  },
+  "smartAccounts": {
+    "donor": "0xFAE7eE8e803495ca1349b01f10cbc67B26413303",
+    "fieldOffice": "0xf2eCCAc18f7058b73B6f9F311F27267a06bd843F",
+    "beneficiary": "0x4d0eB5498578a487754D8FF87531BB8adCbCb6Cf"
+  },
+  "finalBalances": {
+    "donor": {
+      "rahat": "5000.0",
+      "cash": "0.0"
+    },
+    "fieldOffice": {
+      "rahat": "3000.0",
+      "cash": "0.0"
+    },
+    "beneficiary": {
+      "rahat": "1000.0",
+      "cash": "1000.0"
+    }
+  },
+  "gasSponsorship": {
+    "paymasterBalance": "0.004352437596307861",
+    "paymasterDeposit": "0.004352437596307861",
+    "totalUsersSponsored": 3,
+    "userEthRequired": "0 ETH"
+  },
+  "achievements": {
+    "onChainBusinessLogic": true,
+    "gasAbstraction": true,
+    "smartAccountDeployment": true,
+    "erc4337Compliance": true,
+    "humanitarianAidFlow": true
+  },
+  "technicalDetails": {
+    "userOperationsExecuted": 5,
+    "smartAccountsDeployed": 3,
+    "gasSettingsUsed": {
+      "maxFeePerGas": "0.3 gwei",
+      "maxPriorityFeePerGas": "0.1 gwei"
+    }
+  }
+}

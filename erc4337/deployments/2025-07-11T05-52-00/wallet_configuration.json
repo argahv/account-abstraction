@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "description": "Wallet and smart account configuration with private keys for testing",
+    "timestamp": "2025-07-11T05:53:34.490Z",
+    "version": "1.0.0",
+    "generatedBy": "ERC-4337 Demo Script"
+  },
+  "donor": {
+    "eoa": "0xb3bf1266676ADf4974aBFCbccE274C64dceff85f",
+    "privateKey": "0x647dc12296dee1b9991329984ccdd16a6b2d01236ab912f5b43ab1dd96056071",
+    "smartAccount": "0xFAE7eE8e803495ca1349b01f10cbc67B26413303"
+  },
+  "fieldOffice": {
+    "eoa": "0x17c513978F09dc80d32E345E137E53e154c6Cc65",
+    "privateKey": "0x0344eac4f9310eedba9b4d727f1cf2cfd0001a2c0941bdc66054bda35ababdbc",
+    "smartAccount": "0xf2eCCAc18f7058b73B6f9F311F27267a06bd843F"
+  },
+  "beneficiary": {
+    "eoa": "0x3ff2c63a362946B748a0BEC0d91e2fe06E0e5940",
+    "privateKey": "0x652cae1bf0774e93a0d54300295ee375cba82b7b26a409f330fb7e06d9e6672e",
+    "smartAccount": "0x4d0eB5498578a487754D8FF87531BB8adCbCb6Cf"
+  }
+}

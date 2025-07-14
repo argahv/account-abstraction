@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "description": "Complete contract deployment information for ERC-4337 humanitarian aid system",
+    "timestamp": "2025-07-11T09:42:26.310Z",
+    "version": "1.0.0",
+    "generatedBy": "ERC-4337 Demo Script"
+  },
+  "network": {
+    "name": "unknown",
+    "chainId": 84532,
+    "type": "testnet"
+  },
+  "coreContracts": {
+    "EntryPoint": "0xD3b07B9630561eCc109612b3E1925A5370903E70",
+    "SimpleAdvancedAccountFactory": "0xf73E53e5a1c64F72B64Cb14BE8e0fe83A223CB64",
+    "SimpleVerifyingPaymaster": "0xBC9D29eeD94Dd7Be60f58a9B48FBDf61b5Ddd50c"
+  },
+  "applicationContracts": {
+    "RahatToken": "0x96F9453dF0a5cf93A30727c10978ec189a4bDDd8",
+    "CashToken": "0x36Bde5BC4ADcf15717a343d2bBb02D4d0ad7570E",
+    "AidFlowManager": "0xb6f8F56F5E24cFB75F4C3fea24AcF22D3d46f3e9",
+    "CashOutManager": "0x4493Af556890BA5322fC637102Ca9BE68A3c1cc1"
+  },
+  "gasSettings": {
+    "maxFeePerGas": "0.3 gwei",
+    "maxPriorityFeePerGas": "0.1 gwei"
+  }
+}
