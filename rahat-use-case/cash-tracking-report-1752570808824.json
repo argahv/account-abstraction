@@ -1,0 +1,103 @@
+{
+  "timestamp": "2025-07-15T09:13:28.823Z",
+  "network": {
+    "name": "unknown",
+    "chainId": 84532,
+    "type": "testnet"
+  },
+  "contracts": {
+    "entryPoint": "0xF244Afbfc6dAc4069c78ac62E7c71B50B48a9d0B",
+    "rahatToken": "0x4a0B37d3Ec4317B7f617d4757499dEAcd7A88298",
+    "cashToken": "0x88ec2b1d7CAA016566BDEF3152DA242e4376BAc4",
+    "paymaster": "0x7144dC7Fa6f3Fa9f01B470f5412000e3055CA433",
+    "factory": "0xE7423f71163d0b8faE90DbD86F2d25B76237De7f"
+  },
+  "smartAccounts": {
+    "beneficiary": "0xF7DE09372E3F87f0672AeF564A18f35BD37e87EB",
+    "fieldManager": "0x81065d93ccEd87E23918bE9e767a7d92687931d5",
+    "vendor": "0xf8e51aBdc1A8EA99FF73620F4Ad9D52B825DD198",
+    "cashier": "0x9896a97640b8C9E2F94582cbb8F8b87022b92159"
+  },
+  "finalBalances": {
+    "beneficiary": {
+      "rahat": "1000.0",
+      "cash": "0.0"
+    },
+    "fieldManager": {
+      "rahat": "0.0",
+      "cash": "150.0"
+    },
+    "vendor": {
+      "rahat": "0.0",
+      "cash": "75.0"
+    },
+    "cashier": {
+      "rahat": "0.0",
+      "cash": "75.0"
+    }
+  },
+  "transactionHistory": [
+    {
+      "step": "1",
+      "type": "RahatToken Handshake",
+      "token": "RAHAT",
+      "from": "Beneficiary",
+      "to": "Field Manager",
+      "amount": "500.0",
+      "transactions": [
+        "0x015ae195b42833212d905cd2b85ae73c4563539c6b03e4f8c1d9de5351e25512",
+        "0x0fce335ab60a61127cbda84e73a3881c2d4262cca52ce4a5ec650efee731d70d"
+      ],
+      "timestamp": "2025-07-15T09:12:31.942Z"
+    },
+    {
+      "step": "2",
+      "type": "Cash-Out",
+      "tokenIn": "RAHAT",
+      "tokenOut": "CASH",
+      "account": "Field Manager",
+      "amount": "300.0",
+      "burnTx": "0xfeb437230bbcbfd705487e75b2006b888596550de4c07befd12d5637f3e2510d",
+      "description": "Convert RahatToken to CashToken for spending",
+      "timestamp": "2025-07-15T09:12:53.447Z"
+    },
+    {
+      "step": "3a",
+      "type": "CashToken Payment",
+      "token": "CASH",
+      "from": "Field Manager",
+      "to": "Vendor",
+      "amount": "150.0",
+      "transaction": "0x8e9c3a9c75630c1b986e04420473a2778f659033a76c618ea250d6dadb507171",
+      "purpose": "Payment for goods/services",
+      "timestamp": "2025-07-15T09:13:06.903Z"
+    },
+    {
+      "step": "3b",
+      "type": "CashToken Exchange",
+      "token": "CASH",
+      "from": "Vendor",
+      "to": "Cashier",
+      "amount": "75.0",
+      "transaction": "0x73d0ea0773011520593a1e553ec36d12a0afc4c2001d0ae80070a7a018f45aac",
+      "purpose": "Exchange for physical cash",
+      "timestamp": "2025-07-15T09:13:18.893Z"
+    }
+  ],
+  "summary": {
+    "totalTransactions": 4,
+    "rahatTokenFlow": "500 → 300",
+    "cashTokenFlow": "300 → 150",
+    "participantRoles": [
+      "Beneficiary",
+      "Field Manager",
+      "Vendor",
+      "Cashier"
+    ]
+  },
+  "gasSettings": {
+    "maxFeePerGas": "0.03 gwei",
+    "maxPriorityFeePerGas": "0.01 gwei",
+    "paymasterFunding": "0.005 ETH"
+  }
+}

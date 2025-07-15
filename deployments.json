@@ -1,7 +1,0 @@
-{
-  "network": "base_sepolia",
-  "deployer": "0x0660361D2350fBAA95C0B946A7D278b3E30caA32",
-  "RahatToken": "0x6cD02FD4b1BE387AD80EFf552D7b11AB98Ce9112",
-  "CashToken": "0xf53aBb375d09243BAf33C47b2D533d258297022C",
-  "CashOutManager": "0x62bdD3518486b82D352Ab3fCce97181A3DB6E29C"
-}

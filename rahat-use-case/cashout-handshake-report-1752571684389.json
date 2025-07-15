@@ -1,0 +1,81 @@
+{
+  "timestamp": "2025-07-15T09:28:04.388Z",
+  "network": {
+    "name": "unknown",
+    "chainId": 84532,
+    "type": "testnet"
+  },
+  "contracts": {
+    "entryPoint": "0x2103CEBB9EfF65D3c341fdD575692fFb4dA58A5D",
+    "rahatToken": "0xb21aDae79693e2B65B51854eA6C1CEeDcccd06E4",
+    "cashToken": "0x6a5fdf654c72AC68B2a14e0dECfEEdbCecfc36e3",
+    "paymaster": "0x8D4E228E61abb73Dca2c6E72b6c5C4FFFAF853ED",
+    "factory": "0xba595c33e8dbEed3Af3A2fE4507ADe2285cc0Ea9"
+  },
+  "smartAccounts": {
+    "fieldManager": "0x3967D13Ff1C73576D09f6B62b832Fe9E0791E937",
+    "beneficiary": "0x5dcb33558f31B06F899654CE98b960E5Ac608210"
+  },
+  "finalBalances": {
+    "fieldManager": {
+      "rahat": "800.0",
+      "cash": "0.0"
+    },
+    "beneficiary": {
+      "rahat": "200.0",
+      "cash": "300.0"
+    }
+  },
+  "transactionHistory": [
+    {
+      "step": "1",
+      "type": "Initial Mint",
+      "token": "RAHAT",
+      "from": "Deployer",
+      "to": "Field Manager Smart Account",
+      "amount": "1000.0",
+      "transaction": "0xac7487ed4309a5a2c177867cda949bd1e8c681ee81eb0324f1c6d8fd3e4eb0da",
+      "description": "Initial humanitarian aid token distribution",
+      "timestamp": "2025-07-15T09:27:02.923Z"
+    },
+    {
+      "step": "2",
+      "type": "Token Assignment",
+      "token": "RAHAT",
+      "from": "Field Manager Smart Account",
+      "to": "Beneficiary Smart Account",
+      "amount": "500.0",
+      "transaction": "0x4840e7a1558e61de87fdb68c566ff75bd39254e6662cedf19ef4c0be7dfffd3d",
+      "description": "Assignment of aid tokens to verified beneficiary",
+      "timestamp": "2025-07-15T09:27:15.343Z"
+    },
+    {
+      "step": "3",
+      "type": "Cash-Out Handshake",
+      "tokenIn": "RAHAT",
+      "tokenOut": "CASH",
+      "amount": "300.0",
+      "transactions": {
+        "beneficiaryApprove": "0xa3efc1279eb4c1afbbc5ff1ec0a28a6e88db23a7c18c572d1ca38bb7caa77dc3",
+        "fieldManagerTransferFrom": "0x20372a9318c1ab1ac9e4c1c3af75dd76f3d4118c01ad0d4aa9a156ba4c276580",
+        "cashTokenMint": "0xd418b43d20f0b4fbedd5f79a0485e64ed53fa6a5568786a69eb32efc06a8b061"
+      },
+      "description": "Mutual handshake protocol for cash-out: RahatToken → CashToken",
+      "protocol": "approve + transferFrom + mint",
+      "timestamp": "2025-07-15T09:27:53.880Z"
+    }
+  ],
+  "flowSummary": {
+    "totalTransactions": 3,
+    "flow": "Deployer → Field Manager → Beneficiary → Cash-out Handshake",
+    "initialMint": "1000 RAHAT",
+    "assigned": "500 RAHAT",
+    "cashedOut": "300 RAHAT → CASH",
+    "handshakeProtocol": "approve + transferFrom + mint"
+  },
+  "gasSettings": {
+    "maxFeePerGas": "0.03 gwei",
+    "maxPriorityFeePerGas": "0.01 gwei",
+    "paymasterFunding": "0.005 ETH"
+  }
+}

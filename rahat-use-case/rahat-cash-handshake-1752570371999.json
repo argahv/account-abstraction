@@ -1,0 +1,29 @@
+{
+  "timestamp": "2025-07-15T09:06:11.999Z",
+  "network": {
+    "name": "unknown",
+    "chainId": 84532,
+    "type": "testnet"
+  },
+  "contracts": {
+    "entryPoint": "0x4D36FF182ba09021D9DCc92EBB608Ad4E4101a0b",
+    "rahatToken": "0x9E69d27815563Aa3288f90A56Cf7aDae764AAeea",
+    "cashToken": "0xD6718732C9DDbb7A464A2c0fB1268CD7F25C0163",
+    "paymaster": "0x6588C08b36980576c9b407D2b9fF63aA1Ff6478B",
+    "factory": "0xFEB312e9D98bdAE511E63a2d23051304A21FC285",
+    "smartAccount": "0x5eF07418526B9464989BF67DcbC4cE589bE282fE"
+  },
+  "wallets": {
+    "beneficiary": "0x0660361D2350fBAA95C0B946A7D278b3E30caA32",
+    "fieldManager": "0x6B60d41dB6A10c2357b53f9701441cA2984B7489"
+  },
+  "flow": {
+    "initialRahatTokens": "1000",
+    "cashOutAmount": "500"
+  },
+  "gasSettings": {
+    "maxFeePerGas": "0.03 gwei",
+    "maxPriorityFeePerGas": "0.01 gwei",
+    "paymasterFunding": "0.005 ETH"
+  }
+}
